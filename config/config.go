@@ -8,4 +8,5 @@ type RedisConfig struct {
 
 type Config struct{
 	Redis RedisConfig `mapstructure:"redis" json:"redis"`
+	Port int `mapstructure:"port" json:"port"`
 }
