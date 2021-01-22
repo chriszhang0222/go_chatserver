@@ -1,8 +1,8 @@
 package global
 import (
-	"go_chatserver/config"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"go_chatserver/config"
 )
 var (
 	Config *config.Config = &config.Config{}
