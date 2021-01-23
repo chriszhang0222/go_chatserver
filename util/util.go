@@ -6,3 +6,7 @@ func GetChannel(userId int, domain string) string{
 	str := fmt.Sprintf("%s:user_%d", domain, userId)
 	return str
 }
+
+func SendRequest(){
+
+}

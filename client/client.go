@@ -57,3 +57,7 @@ func (c *Client) OnMessagePub(){
 	}
 }
 
+func (c *Client) HandleMessage(message []byte){
+
+}
+

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"go_chatserver/client"
+	"go_chatserver/global"
 	"go_chatserver/redisconn"
 	"go_chatserver/util"
 	"log"
@@ -45,5 +47,6 @@ func main(){
 	http.Handle("/", rtr)
 
 	log.Println("Listening...")
-	http.ListenAndServe(":8888", nil)
+	addr := fmt.Sprintf(":%d", global.Config.Port)
+	http.ListenAndServe(addr, nil)
 }
