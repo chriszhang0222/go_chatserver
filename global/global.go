@@ -6,6 +6,7 @@ import (
 )
 var (
 	Config *config.Config = &config.Config{}
+	Signal chan bool = make(chan bool, 1)
 )
 
 func init(){

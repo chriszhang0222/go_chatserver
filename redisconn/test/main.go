@@ -1,15 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
+	"go_chatserver/global"
 	"go_chatserver/redisconn"
 	"log"
 	"sync"
+	"time"
 )
 var wg sync.WaitGroup
+var Ok chan bool = make(chan bool)
 func Simulate(pb *redis.PubSub){
 	for {
+		//if <- signal{
+		//	wg.Done()
+		//}
 		select {
 		case mg := <-pb.Channel():
 			// 等待从 channel 中发布 close 关闭服务
@@ -24,11 +29,18 @@ func Simulate(pb *redis.PubSub){
 	}
 
 }
+
+func stop(){
+	time.Sleep(5* time.Second)
+	global.Signal <- true
+}
 func main(){
-	//wg.Add(1)
-	//pub := redisconn.RedisClient.Subscribe("channel1")
-	//go Simulate(pub)
+	pub := redisconn.RedisClient.Subscribe("channel1")
+	go Simulate(pub)
+	go stop()
+	<- global.Signal
+	//wg.Done()
 	//wg.Wait()
-    fmt.Println(redisconn.RedisClient.Get("10"))
+
 
 }

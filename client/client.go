@@ -44,3 +44,16 @@ func (c *Client) Read(){
 	}
 }
 
+func (c *Client) OnMessagePub(){
+	if c.Pub != nil{
+		for {
+			select {
+				case mg := <- c.Pub.Channel():
+					fmt.Println(mg.Payload)
+			default:
+
+			}
+		}
+	}
+}
+

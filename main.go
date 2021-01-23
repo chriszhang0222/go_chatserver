@@ -1,14 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
-	"go_chatserver/global"
+	"go_chatserver/client"
 	"go_chatserver/redisconn"
 	"go_chatserver/util"
-	"go_chatserver/client"
 	"log"
 	"net/http"
 	"strconv"
@@ -28,6 +26,7 @@ func WebsocketHandler(w http.ResponseWriter, req *http.Request){
 	userId, _ := strconv.Atoi(uri[2])
 	domain := uri[3]
 	channel := util.GetChannel(userId, domain)
+	zap.S().Info("connect to "+ channel)
 	pubsub := redisconn.RedisClient.Subscribe(channel)
 	client := client.NewClient(req.RemoteAddr, conn, pubsub, userId, domain)
 	conn.SetCloseHandler(func(code int, text string) error {
@@ -35,9 +34,8 @@ func WebsocketHandler(w http.ResponseWriter, req *http.Request){
 		client.Pub.Unsubscribe(channel)
 		return nil
 	})
-
+	go client.OnMessagePub()
 	go client.Read()
-	conn.RemoteAddr()
 
 }
 func main(){
@@ -47,5 +45,5 @@ func main(){
 	http.Handle("/", rtr)
 
 	log.Println("Listening...")
-	http.ListenAndServe(fmt.Sprintf(":%d", global.Config.Port), nil)
+	http.ListenAndServe(":8888", nil)
 }
