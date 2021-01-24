@@ -49,6 +49,7 @@ func (c *Client) Read(){
 func (c *Client) OnMessagePub(){
 	defer func(){
 		if r := recover(); r != nil{
+			fmt.Println("stop current goroutine")
 			return
 		}
 	}()
@@ -76,8 +77,8 @@ func (c *Client) HandleMessage(message []byte){
 	if err != nil {
 		return
 	}
-	message_type := model.Type
-	if message_type == "chat"{
+	messageType := model.Type
+	if messageType == "chat"{
 		c.PublishMessage(model)
 	}else{
 		return
@@ -112,7 +113,62 @@ func (c *Client) PublishMessage(message *model.Message){
 		})
 		return
 	}
+	data := map[string]interface{}{
+		"room_id": message.Roomid,
+		"user_id": message.User,
+		"identifier": message.Identifier,
+		"message_content": message.MessageBody,
+	}
+	response, err = util.SendRequestWithAuth(message.GetPersistUri(), data, token.Access)
+	if err != nil {
+		c.Socket.WriteJSON(map[string]string{
+			"type": "info",
+			"success": "False",
+			"message": "Persist to db failed",
+		})
+		return
+	}
+	persistModel := &model.PersistResponse{}
+	err = json.Unmarshal(response, persistModel)
+	if err != nil {
+		return
+	}
+	if !persistModel.Success{
+		c.Socket.WriteJSON(map[string]interface{}{
+			"type": "info",
+			"success": "false",
+			"message": persistModel.Message,
+		})
+	}else{
+		responseMessage := persistModel.Message
+		c.Socket.WriteJSON(map[string]interface{}{
+			"type": "info_chat",
+			"success": true,
+			"message": "Message sent out successfully",
+			"id": responseMessage["id"],
+			"identifier": message.Identifier,
+			"discussion_date": persistModel.DiscussionDate,
+			"discussion_time": persistModel.DiscussionTime,
+		})
+		responseMessage["type"] = "chat"
+		responseMessage["identifier"] = message.Identifier
+		c.PublishToAllUsersInRoom(persistModel.UserIds, message)
 
+	}
+}
 
+func (c *Client) PublishToAllUsersInRoom(userIds []int, message *model.Message){
+	for _, v := range userIds{
+		user_message := buildMessage(v, message)
+		if len(user_message) == 0{
+			return
+		}
+
+	}
+}
+
+func buildMessage(id int, message *model.Message)map[string]interface{}{
+	dict := map[string]interface{}{}
+	return dict
 }
 
