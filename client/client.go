@@ -40,7 +40,6 @@ func (c *Client) Read(){
 	for {
 		_, message, err := c.Socket.ReadMessage()
 		if err != nil{
-			zap.S().Error(err)
 			return
 		}
 		c.HandleMessage(message)
@@ -48,8 +47,17 @@ func (c *Client) Read(){
 }
 
 func (c *Client) OnMessagePub(){
+	defer func(){
+		if r := recover(); r != nil{
+			return
+		}
+	}()
+
 	if c.Pub != nil{
 		for {
+			if c.Pub == nil{
+				break
+			}
 			select {
 				case mg := <- c.Pub.Channel():
 					fmt.Println(mg.Payload)
@@ -57,6 +65,8 @@ func (c *Client) OnMessagePub(){
 
 			}
 		}
+	}else{
+		return
 	}
 }
 

@@ -32,8 +32,10 @@ func WebsocketHandler(w http.ResponseWriter, req *http.Request){
 	pubsub := redisconn.RedisClient.Subscribe(channel)
 	client := client.NewClient(req.RemoteAddr, conn, pubsub, userId, domain)
 	conn.SetCloseHandler(func(code int, text string) error {
-		zap.S().Info("Close conn for " + string(userId) + " " + domain)
+		zap.S().Info("Close conn for " + channel)
 		client.Pub.Unsubscribe(channel)
+		client.Pub.Close()
+		client.Socket.Close()
 		return nil
 	})
 	go client.OnMessagePub()
