@@ -12,5 +12,5 @@ require (
 	github.com/spf13/viper v1.7.1
 	go.uber.org/zap v1.10.0
 	google.golang.org/grpc v1.34.0
-	google.golang.org/protobuf v1.23.0
+	google.golang.org/protobuf v1.25.0
 )

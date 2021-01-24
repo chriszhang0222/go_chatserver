@@ -1,9 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/go-redis/redis"
 	"go_chatserver/global"
-	"go_chatserver/redisconn"
+	"go_chatserver/model"
+
+	"go_chatserver/util"
+	//"go_chatserver/redisconn"
 	"log"
 	"sync"
 	"time"
@@ -35,12 +40,13 @@ func stop(){
 	global.Signal <- true
 }
 func main(){
-	pub := redisconn.RedisClient.Subscribe("channel1")
-	go Simulate(pub)
-	go stop()
-	<- global.Signal
-	//wg.Done()
-	//wg.Wait()
-
-
+	urls := "http://demo2.localhost:8000/api/token/"
+	data := map[string]interface{}{
+		"user_id": 34,
+		"company_id": 1,
+	}
+	rsp, _ := util.SendRequest(urls, data)
+	token := &model.Token{}
+	json.Unmarshal(rsp, token)
+	fmt.Println(token.Access)
 }

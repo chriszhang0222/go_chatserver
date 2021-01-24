@@ -13,7 +13,11 @@ type Message struct{
 	Type string `json:"type"`
 }
 
-func (m *Message) getUri() string{
+type Token struct{
+	Access string `json:"access"`
+	Refresh string `json:"refresh"`
+}
+func (m *Message) GetUri() string{
 	urls := strings.Split(m.Url, "/")
-	return urls[1] + "//" + urls[3]
+	return urls[1] + "//" + urls[3] + "/api/token/"
 }
