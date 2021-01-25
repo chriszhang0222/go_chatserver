@@ -8,6 +8,7 @@ import (
 	"go_chatserver/model"
 	"go.uber.org/zap"
 	"go_chatserver/util"
+	"go_chatserver/redisconn"
 )
 
 type Client struct{
@@ -152,23 +153,39 @@ func (c *Client) PublishMessage(message *model.Message){
 		})
 		responseMessage["type"] = "chat"
 		responseMessage["identifier"] = message.Identifier
-		c.PublishToAllUsersInRoom(persistModel.UserIds, message)
+		c.PublishToAllUsersInRoom(persistModel.UserIds, responseMessage, c.Domain)
 
 	}
 }
 
-func (c *Client) PublishToAllUsersInRoom(userIds []int, message *model.Message){
-	for _, v := range userIds{
-		user_message := buildMessage(v, message)
-		if len(user_message) == 0{
+func (c *Client) PublishToAllUsersInRoom(userIds []int, message map[string]interface{}, domain string){
+	for _, id := range userIds{
+		userMessage := buildMessage(id, message)
+		if len(userMessage) == 0{
 			return
+		}else{
+			data, _ := json.Marshal(userMessage)
+			channel := util.GetChannel(id, domain)
+			zap.S().Info("Publish message to " + channel)
+			err := redisconn.RedisClient.Publish(channel, data).Err()
+			if err != nil {
+				zap.S().Error("Publish to " + channel + " failed")
+			}
 		}
 
 	}
 }
 
-func buildMessage(id int, message *model.Message)map[string]interface{}{
-	dict := map[string]interface{}{}
+func buildMessage(id int, message map[string]interface{})map[string]interface{}{
+	dict := message
+	if message["from_user_id"].(int) == id{
+		dict["read"] = true
+		dict["mc"] = "fade-message"
+	}else{
+		dict["read"] = false
+		dict["mc"] = "fade-message unread"
+	}
+	dict["body"] = message["body"]
 	return dict
 }
 

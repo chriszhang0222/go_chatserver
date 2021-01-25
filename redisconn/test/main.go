@@ -5,21 +5,19 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"go_chatserver/global"
-	"go_chatserver/model"
+	"go_chatserver/redisconn"
 
-	"go_chatserver/util"
-	//"go_chatserver/redisconn"
-	"log"
 	"sync"
 	"time"
 )
 var wg sync.WaitGroup
 var Ok chan bool = make(chan bool)
+type Message struct{
+	Room int `json:"room_id"`
+	Read bool `json:"read"`
+}
 func Simulate(pb *redis.PubSub){
 	for {
-		//if <- signal{
-		//	wg.Done()
-		//}
 		select {
 		case mg := <-pb.Channel():
 			// 等待从 channel 中发布 close 关闭服务
@@ -27,7 +25,10 @@ func Simulate(pb *redis.PubSub){
 				// 当
 				wg.Done()
 			} else {
-				log.Println("接channel信息", mg.Payload)
+				a := &Message{}
+				json.Unmarshal([]byte(mg.Payload), a)
+				fmt.Println(a)
+
 			}
 		default:
 		}
@@ -40,13 +41,9 @@ func stop(){
 	global.Signal <- true
 }
 func main(){
-	urls := "http://demo2.localhost:8000/api/token/"
-	data := map[string]interface{}{
-		"user_id": 34,
-		"company_id": 1,
-	}
-	rsp, _ := util.SendRequest(urls, data)
-	token := &model.Token{}
-	json.Unmarshal(rsp, token)
-	fmt.Println(token.Access)
+	wg.Add(1)
+	pb := redisconn.RedisClient.Subscribe("channel1")
+	go Simulate(pb)
+	wg.Wait()
+
 }
