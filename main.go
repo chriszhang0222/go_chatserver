@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -11,6 +12,7 @@ import (
 	"go_chatserver/util"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -42,9 +44,21 @@ func WebsocketHandler(w http.ResponseWriter, req *http.Request){
 	go client.Read()
 
 }
+
+func SystemHandler(w http.ResponseWriter, req *http.Request){
+	numGoroutine := runtime.NumGoroutine()
+	numCPU := runtime.NumCPU()
+	data := map[string]interface{}{}
+	data["cpu"] = numCPU
+	data["goroutine"] = numGoroutine
+	d, _ := json.Marshal(data)
+	w.Write(d)
+}
+
 func main(){
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/chat/{id:\\d+}/{domain:[a-zA-Z0-9\\-\\_]*}", WebsocketHandler).Methods("GET")
+	rtr.HandleFunc("/system/state", SystemHandler).Methods("GET")
 
 	http.Handle("/", rtr)
 
