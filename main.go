@@ -9,6 +9,7 @@ import (
 	"go_chatserver/client"
 	"go_chatserver/global"
 	"go_chatserver/redisconn"
+	router2 "go_chatserver/router"
 	"go_chatserver/util"
 	"log"
 	"net/http"
@@ -63,6 +64,13 @@ func main(){
 	http.Handle("/", rtr)
 
 	log.Println("Listening...")
+	Router := router2.InitRouter()
+	go func() {
+		if err := Router.Run(fmt.Sprintf(":%d", 9000)); err != nil {
+			zap.S().Panic("serve error", err.Error())
+		}
+		zap.S().Debugf("serve goods server at %d", 9000)
+	}()
 	addr := fmt.Sprintf(":%d", global.Config.Port)
 	http.ListenAndServe(addr, nil)
 }
