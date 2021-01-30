@@ -1,6 +1,7 @@
 package main
 
 import (
+	context2 "context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -11,6 +12,7 @@ import (
 	"go_chatserver/redisconn"
 	router2 "go_chatserver/router"
 	"go_chatserver/util"
+	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"runtime"
@@ -34,15 +36,17 @@ func WebsocketHandler(w http.ResponseWriter, req *http.Request){
 	zap.S().Info("connect to "+ channel)
 	pubsub := redisconn.RedisClient.Subscribe(channel)
 	client := client.NewClient(req.RemoteAddr, conn, pubsub, userId, domain)
+	ctx, cancel := context2.WithCancel(context.Background())
 	conn.SetCloseHandler(func(code int, text string) error {
 		zap.S().Info("Close conn for " + channel)
+		cancel()
 		client.Pub.Unsubscribe(channel)
 		client.Pub.Close()
 		client.Socket.Close()
 		return nil
 	})
-	go client.OnMessagePub()
-	go client.Read()
+	go client.OnMessagePub(ctx)
+	go client.Read(ctx)
 
 }
 

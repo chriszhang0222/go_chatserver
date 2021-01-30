@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"go_chatserver/util"
 	"go_chatserver/redisconn"
+	"golang.org/x/net/context"
 )
 
 type Client struct{
@@ -31,23 +32,30 @@ func NewClient(Addr string, Socket *websocket.Conn, Pub *redis.PubSub , UserId i
 	}
 }
 
-func (c *Client) Read(){
+func (c *Client) Read(ctx context.Context){
 	defer func(){
 		if r := recover(); r != nil{
 			zap.S().Error(r)
 			c.Socket.Close()
 		}
 	}()
+	LOOP:
 	for {
-		_, message, err := c.Socket.ReadMessage()
-		if err != nil{
-			return
+		select {
+		case <-ctx.Done():
+			break LOOP
+		default:
+			_, message, err := c.Socket.ReadMessage()
+			if err != nil{
+				return
+			}
+			c.HandleMessage(message)
 		}
-		c.HandleMessage(message)
 	}
+	return
 }
 
-func (c *Client) OnMessagePub(){
+func (c *Client) OnMessagePub(ctx context.Context){
 	defer func(){
 		if r := recover(); r != nil{
 			fmt.Println("stop current goroutine")
@@ -56,20 +64,23 @@ func (c *Client) OnMessagePub(){
 	}()
 
 	if c.Pub != nil{
+	Loop:
 		for {
-			if c.Pub == nil{
-				break
-			}
 			select {
+			case <-ctx.Done():
+				break Loop
+			default:
+				select {
 				case mg := <- c.Pub.Channel():
 					fmt.Println(mg.Payload)
-			default:
-
+				default:
+				}
 			}
 		}
 	}else{
 		return
 	}
+	return
 }
 
 func (c *Client) HandleMessage(message []byte){
