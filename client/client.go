@@ -49,6 +49,7 @@ func (c *Client) Read(ctx context.Context){
 			if err != nil{
 				return
 			}
+
 			c.HandleMessage(message)
 		}
 	}
@@ -80,6 +81,7 @@ func (c *Client) OnMessagePub(ctx context.Context){
 	}else{
 		return
 	}
+	fmt.Println("cancel conn" + string(c.UserId) + " " + c.Domain)
 	return
 }
 
